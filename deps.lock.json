@@ -1,0 +1,16 @@
+{
+  "platforms": {
+    "linux-aarch64-glibc217": {
+      "gtest": {
+        "url": "https://github.com/oceanbase/seekdb-deps/releases/download/gtest-1.14.0/gtest-1.14.0-bin-linux-aarch64-glibc217-20261106-8f0a0a8e9fe6.tar.gz",
+        "sha256": "6db9db8c31b26a5e52392ac4848d16681470c8554154ac046b47b78a2f65bac6"
+      }
+    },
+    "linux-x86_64-glibc217": {
+      "gtest": {
+        "url": "https://github.com/oceanbase/seekdb-deps/releases/download/gtest-1.14.0/gtest-1.14.0-bin-linux-x86_64-glibc217-20261106-8f0a0a8e9fe6.tar.gz",
+        "sha256": "403ff0e270fffeb5a5336696966963cf5e146fb96c70d9cf81b1383d7d0f8efa"
+      }
+    }
+  }
+}
