@@ -37,7 +37,8 @@ const char *VALID_PROVIDERS[] = {
   "SILICONFLOW",
   "COHERE",
   "HUNYUAN-OPENAI",
-  "OPENAI"
+  "OPENAI",
+  "OLLAMA"
 };
 
 #define EXTRACT_JSON_ELEM_STR(json_key, member) \
@@ -94,6 +95,11 @@ int ObAiModelEndpointInfo::deep_copy(
   return ret;
 }
 
+static bool is_ollama_provider(const ObString &provider)
+{
+  return provider.case_compare("OLLAMA") == 0;
+}
+
 int ObAiModelEndpointInfo::check_valid() const
 {
   int ret = OB_SUCCESS;
@@ -115,16 +121,16 @@ int ObAiModelEndpointInfo::check_valid() const
   } else if (!url_.prefix_match_ci("http://") && !url_.prefix_match_ci("https://")) {
     ret = OB_AI_FUNC_PARAM_VALUE_INVALID;
     LOG_USER_ERROR(OB_AI_FUNC_PARAM_VALUE_INVALID, strlen("url"), "url");
-  } else if (access_key_.empty()) {
-    ret = OB_AI_FUNC_PARAM_EMPTY;
-    LOG_USER_ERROR(OB_AI_FUNC_PARAM_EMPTY, strlen("access_key"), "access_key");
-    LOG_WARN("access_key is empty", K(ret), K(*this));
   } else if (provider_.empty()) {
     ret = OB_AI_FUNC_PARAM_EMPTY;
     LOG_USER_ERROR(OB_AI_FUNC_PARAM_EMPTY, strlen("provider"), "provider");
   } else if (!is_valid_provider(provider_)) {
     ret = OB_AI_FUNC_PARAM_VALUE_INVALID;
     LOG_USER_ERROR(OB_AI_FUNC_PARAM_VALUE_INVALID, strlen("provider"), "provider");
+  } else if (access_key_.empty() && !is_ollama_provider(provider_)) {
+    ret = OB_AI_FUNC_PARAM_EMPTY;
+    LOG_USER_ERROR(OB_AI_FUNC_PARAM_EMPTY, strlen("access_key"), "access_key");
+    LOG_WARN("access_key is empty", K(ret), K(*this));
   } else if (!parameters_.empty()) {
     ret = OB_AI_FUNC_PARAM_VALUE_INVALID;
     LOG_USER_ERROR(OB_AI_FUNC_PARAM_VALUE_INVALID, strlen("parameters"), "parameters");
@@ -195,7 +201,11 @@ int ObAiModelEndpointInfo::encrypt_access_key_(ObIAllocator &allocator, const Ob
 int ObAiModelEndpointInfo::decrypt_access_key_(ObIAllocator &allocator, const ObString &encrypted_access_key, ObString &unencrypted_access_key) const
 {
   int ret = OB_SUCCESS;
-  if (OB_FAIL(ob_write_string(allocator, encrypted_access_key, unencrypted_access_key))) {
+  // An endpoint that needs no credential (for example Ollama) stores an empty
+  // or NULL access key; that is a valid empty key, not a failure.
+  if (encrypted_access_key.empty() || OB_ISNULL(encrypted_access_key.ptr())) {
+    unencrypted_access_key.reset();
+  } else if (OB_FAIL(ob_write_string(allocator, encrypted_access_key, unencrypted_access_key))) {
   }
   return ret;
 }
@@ -224,7 +234,10 @@ EndpointType::TYPE EndpointType::str_to_endpoint_type(const ObString &type_str)
 int ObAiModelEndpointInfo::get_unencrypted_access_key(common::ObIAllocator &allocator, ObString &unencrypted_access_key) const
 {
   int ret = OB_SUCCESS;
-  if (OB_FAIL(decrypt_access_key_(allocator, access_key_, unencrypted_access_key))) {
+  unencrypted_access_key.reset();
+  if (access_key_.empty() || OB_ISNULL(access_key_.ptr())) {
+    // No credential configured: keep the empty key.
+  } else if (OB_FAIL(decrypt_access_key_(allocator, access_key_, unencrypted_access_key))) {
   }
   return ret;
 }
