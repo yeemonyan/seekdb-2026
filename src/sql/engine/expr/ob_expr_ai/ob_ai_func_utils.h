@@ -377,10 +377,15 @@ public:
   ObAIFuncPromptObjectUtils() {}
   virtual ~ObAIFuncPromptObjectUtils() {}
   static bool is_valid_prompt_object(ObJsonObject* prompt_object);
+  static bool is_prompt_object_node(ObJsonNode *node);
   static int replace_all_str_args_in_template(ObIAllocator &allocator, ObJsonObject* prompt_object, ObString& replaced_prompt_str);
+  static int replace_all_str_args_in_template(ObIAllocator &allocator, ObJsonObject* prompt_object,
+                                              int64_t depth, ObString& replaced_prompt_str);
+  static int render_prompt_arg(ObIAllocator &allocator, ObJsonNode *arg_node, int64_t depth, ObString &rendered);
   static int construct_prompt_object(ObIAllocator &allocator, ObString &template_str, ObJsonArray *args_array, ObJsonObject *&prompt_object);
   static constexpr char prompt_template_key[20] = "template";
   static constexpr char prompt_args_key[20] = "args";
+  static constexpr int64_t MAX_PROMPT_NESTING_DEPTH = 10;
 private:
   DISALLOW_COPY_AND_ASSIGN(ObAIFuncPromptObjectUtils);
 };
